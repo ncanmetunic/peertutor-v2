@@ -30,6 +30,11 @@ export const getUserProfile = async (uid) => {
 };
 
 /**
+ * Alias for getUserProfile
+ */
+export const getUserById = getUserProfile;
+
+/**
  * Update user profile
  */
 export const updateUserProfile = async (uid, data) => {

@@ -116,10 +116,11 @@ peertutor-v2/
 ## Development Roadmap
 
 - [x] Week 1: Foundation & Setup
-- [ ] Week 2: Core Social Features (Profile, Matching, Peer Requests)
-- [ ] Week 3: Chat & Discovery
-- [ ] Week 4: Communities & Events
-- [ ] Week 5: Gamification & Dashboard
+- [x] Week 2: Core Social Features (Profile, Matching, Peer Requests)
+- [x] Week 3: Chat & Discovery
+- [x] Week 3+: Communities & Events (Base implementation)
+- [ ] Week 4: Complete Community/Event detail pages & File Library
+- [ ] Week 5: Gamification (Streaks) & Admin Dashboard
 - [ ] Week 6: Notifications & Moderation
 
 ## Firebase Collections Schema

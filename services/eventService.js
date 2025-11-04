@@ -30,10 +30,12 @@ export const createEvent = async (creatorId, eventData) => {
       creatorName: eventData.creatorName,
       startTime: Timestamp.fromDate(new Date(eventData.startTime)),
       endTime: Timestamp.fromDate(new Date(eventData.endTime)),
-      isOnline: true,
+      isOnline: eventData.isOnline !== undefined ? eventData.isOnline : true,
+      location: eventData.location || null,
       participants: [creatorId],
       maxParticipants: eventData.maxParticipants || null,
       createdAt: serverTimestamp(),
+      status: 'active',
     });
 
     return eventRef.id;
@@ -144,6 +146,47 @@ export const getUserEvents = async (userId) => {
     }));
   } catch (error) {
     console.error('Error getting user events:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update an event (creator only)
+ */
+export const updateEvent = async (eventId, updateData) => {
+  try {
+    const eventRef = doc(db, 'events', eventId);
+    const dataToUpdate = { ...updateData };
+
+    // Convert dates to Timestamp if provided
+    if (updateData.startTime) {
+      dataToUpdate.startTime = Timestamp.fromDate(new Date(updateData.startTime));
+    }
+    if (updateData.endTime) {
+      dataToUpdate.endTime = Timestamp.fromDate(new Date(updateData.endTime));
+    }
+
+    dataToUpdate.updatedAt = serverTimestamp();
+
+    await updateDoc(eventRef, dataToUpdate);
+  } catch (error) {
+    console.error('Error updating event:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cancel an event (sets status to cancelled)
+ */
+export const cancelEvent = async (eventId) => {
+  try {
+    const eventRef = doc(db, 'events', eventId);
+    await updateDoc(eventRef, {
+      status: 'cancelled',
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error cancelling event:', error);
     throw error;
   }
 };
