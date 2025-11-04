@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
+import { DEFAULT_PROFILE_VISIBILITY } from '../constants/app';
 
 /**
  * Sign up a new user with email and password
@@ -38,6 +39,7 @@ export const signUpWithEmail = async (email, password, displayName) => {
         lastActive: null,
       },
       blocked: [],
+      profileVisibility: DEFAULT_PROFILE_VISIBILITY,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
