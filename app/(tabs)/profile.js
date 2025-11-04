@@ -35,14 +35,17 @@ export default function Profile() {
     <ScrollView style={styles.container}>
       {/* Profile Header */}
       <View style={styles.header}>
-        <Avatar.Image
-          size={100}
-          source={
-            currentUserProfile.photoURL
-              ? { uri: currentUserProfile.photoURL }
-              : require('../../assets/icon.png')
-          }
-        />
+        {currentUserProfile.photoURL ? (
+          <Avatar.Image
+            size={100}
+            source={{ uri: currentUserProfile.photoURL }}
+          />
+        ) : (
+          <Avatar.Text
+            size={100}
+            label={currentUserProfile.displayName?.substring(0, 2).toUpperCase() || 'U'}
+          />
+        )}
         <Text style={styles.name}>{currentUserProfile.displayName}</Text>
         <Text style={styles.email}>{currentUserProfile.email}</Text>
 
