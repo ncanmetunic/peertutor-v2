@@ -6,16 +6,13 @@ import { getFunctions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Firebase configuration
-// TODO: Replace with your Firebase project configuration from Firebase Console
-// Go to: Project Settings > General > Your apps > Firebase SDK snippet > Config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  // measurementId: "YOUR_MEASUREMENT_ID" // Optional for Analytics
+  apiKey: "AIzaSyANGTZ4toKIeYFePTFQhcnUTtj9vO2lcKo",
+  authDomain: "peertutorapp-eab5a.firebaseapp.com",
+  projectId: "peertutorapp-eab5a",
+  storageBucket: "peertutorapp-eab5a.firebasestorage.app",
+  messagingSenderId: "81449387073",
+  appId: "1:81449387073:web:57ad950087c19569d732c0"
 };
 
 // Initialize Firebase
