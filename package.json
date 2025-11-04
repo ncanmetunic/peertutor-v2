@@ -1,0 +1,30 @@
+{
+  "name": "peertutor-v2",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "date-fns": "^4.1.0",
+    "expo": "^54.0.22",
+    "expo-device": "~8.0.9",
+    "expo-document-picker": "~14.0.7",
+    "expo-file-system": "~19.0.17",
+    "expo-image-picker": "~17.0.8",
+    "expo-notifications": "~0.32.12",
+    "expo-router": "^6.0.14",
+    "firebase": "^12.5.0",
+    "react-native": "^0.82.1",
+    "react-native-paper": "^5.14.5",
+    "react-native-safe-area-context": "^5.6.2",
+    "react-native-screens": "^4.18.0",
+    "react-native-url-polyfill": "^3.0.0",
+    "react-native-web": "^0.21.2",
+    "zustand": "^5.0.8"
+  }
+}
