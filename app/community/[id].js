@@ -263,6 +263,19 @@ export default function CommunityDetail() {
           <Text style={styles.description}>{community.description}</Text>
         )}
 
+        {/* Library Button */}
+        {isMember && (
+          <Button
+            mode="outlined"
+            icon="folder"
+            onPress={() => router.push(`/community-library/${id}`)}
+            style={styles.libraryButton}
+            compact
+          >
+            File Library
+          </Button>
+        )}
+
         {/* Channels */}
         <FlatList
           horizontal
@@ -422,6 +435,10 @@ const styles = StyleSheet.create({
   description: {
     ...typography.body2,
     color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  libraryButton: {
+    marginTop: spacing.sm,
     marginBottom: spacing.sm,
   },
   channelList: {
