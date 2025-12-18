@@ -18,6 +18,14 @@ web-build/
 .env
 .env.local
 
+# Testing
+coverage/
+jest-results.json
+
+# Firebase Functions
+functions/node_modules/
+functions/.runtimeconfig.json
+
 # @generated expo-cli sync
 ios/
 android/

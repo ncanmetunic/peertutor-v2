@@ -66,12 +66,107 @@ export const signInWithEmail = async (email, password) => {
 
 /**
  * Sign in with Google
- * Note: This requires additional setup with expo-auth-session
+ * Uses Google OAuth with Firebase Authentication
  */
 export const signInWithGoogle = async () => {
-  // TODO: Implement Google Sign-In with expo-auth-session
-  // This will require additional configuration
-  throw new Error('Google Sign-In not implemented yet');
+  try {
+    // Import dynamically to avoid issues if not configured
+    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
+    const * as Google = await import('expo-auth-session/providers/google');
+    const * as WebBrowser = await import('expo-web-browser');
+
+    // Complete auth session for web
+    WebBrowser.maybeCompleteAuthSession();
+
+    // Configure Google Auth
+    const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+      clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+      iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    });
+
+    if (!request) {
+      throw new Error('Failed to create Google auth request');
+    }
+
+    // Prompt for Google Sign-In
+    const result = await promptAsync();
+
+    if (result.type === 'success') {
+      const { id_token } = result.params;
+
+      // Create Firebase credential from Google ID token
+      const credential = GoogleAuthProvider.credential(id_token);
+
+      // Sign in with Firebase
+      const userCredential = await signInWithCredential(auth, credential);
+
+      // Check if user profile exists, if not create one
+      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // Create new user profile
+        await setDoc(userDocRef, {
+          uid: userCredential.user.uid,
+          email: userCredential.user.email,
+          displayName: userCredential.user.displayName || '',
+          photoURL: userCredential.user.photoURL || '',
+          bio: '',
+          skills: [],
+          needs: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+      }
+
+      return userCredential.user;
+    } else {
+      throw new Error('Google Sign-In cancelled or failed');
+    }
+  } catch (error) {
+    console.error('Google Sign-In error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Alternative Google Sign-In implementation using Firebase Web SDK
+ * This works better in some scenarios
+ */
+export const signInWithGoogleWeb = async () => {
+  try {
+    const { GoogleAuthProvider, signInWithPopup } = await import('firebase/auth');
+
+    const provider = new GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+
+    const userCredential = await signInWithPopup(auth, provider);
+
+    // Check if user profile exists, if not create one
+    const userDocRef = doc(db, 'users', userCredential.user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      await setDoc(userDocRef, {
+        uid: userCredential.user.uid,
+        email: userCredential.user.email,
+        displayName: userCredential.user.displayName || '',
+        photoURL: userCredential.user.photoURL || '',
+        bio: '',
+        skills: [],
+        needs: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
+
+    return userCredential.user;
+  } catch (error) {
+    console.error('Google Sign-In Web error:', error);
+    throw error;
+  }
 };
 
 /**

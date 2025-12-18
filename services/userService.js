@@ -8,6 +8,8 @@ import {
   where,
   getDocs,
   limit,
+  startAfter,
+  orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
@@ -136,9 +138,53 @@ export const searchUsersByTopic = async (topic, limitCount = 20) => {
 };
 
 /**
- * Get all users (for discovery)
+ * Get all users (for discovery) with pagination
  */
-export const getAllUsers = async (limitCount = 50) => {
+export const getAllUsers = async (limitCount = 20, lastDoc = null) => {
+  try {
+    const usersRef = collection(db, 'users');
+    let q;
+
+    if (lastDoc) {
+      // Paginated query
+      q = query(
+        usersRef,
+        orderBy('createdAt', 'desc'),
+        startAfter(lastDoc),
+        limit(limitCount)
+      );
+    } else {
+      // First page
+      q = query(
+        usersRef,
+        orderBy('createdAt', 'desc'),
+        limit(limitCount)
+      );
+    }
+
+    const snapshot = await getDocs(q);
+
+    const users = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      _doc: doc, // Store document reference for pagination
+    }));
+
+    return {
+      users,
+      lastDoc: snapshot.docs[snapshot.docs.length - 1] || null,
+      hasMore: snapshot.docs.length === limitCount,
+    };
+  } catch (error) {
+    console.error('Error getting all users:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all users (legacy - for backward compatibility)
+ */
+export const fetchAllUsers = async (limitCount = 50) => {
   try {
     const usersRef = collection(db, 'users');
     const q = query(usersRef, limit(limitCount));

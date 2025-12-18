@@ -1,48 +1,86 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, Alert } from 'react-native';
-import { Searchbar, FAB } from 'react-native-paper';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, Alert, ActivityIndicator } from 'react-native';
+import { Searchbar } from 'react-native-paper';
 import { colors, spacing, typography } from '../../constants';
 import useAuthStore from '../../stores/authStore';
-import useUserStore from '../../stores/userStore';
 import useConnectionStore from '../../stores/connectionStore';
 import UserCard from '../../components/UserCard';
+import { getAllUsers } from '../../services/userService';
+import { debounce } from '../../utils/helpers';
 
 export default function Discover() {
   const { user } = useAuthStore();
-  const { currentUserProfile, users, fetchAllUsers } = useUserStore();
-  const { sendRequest, sentRequests, checkConnection } = useConnectionStore();
+  const { sendRequest, sentRequests } = useConnectionStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   useEffect(() => {
-    // Filter users based on search query
-    if (searchQuery.trim() === '') {
-      setFilteredUsers(users);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = users.filter(u =>
-        u.displayName?.toLowerCase().includes(query) ||
-        u.bio?.toLowerCase().includes(query)
-      );
-      setFilteredUsers(filtered);
-    }
+    // Filter users based on search query with debouncing
+    filterUsers();
   }, [searchQuery, users]);
 
-  const loadUsers = async () => {
-    setLoading(true);
+  const filterUsers = useCallback(
+    debounce(() => {
+      if (searchQuery.trim() === '') {
+        setFilteredUsers(users);
+      } else {
+        const query = searchQuery.toLowerCase();
+        const filtered = users.filter(u =>
+          u.displayName?.toLowerCase().includes(query) ||
+          u.bio?.toLowerCase().includes(query) ||
+          u.skills?.some(s => s.toLowerCase().includes(query)) ||
+          u.needs?.some(n => n.toLowerCase().includes(query))
+        );
+        setFilteredUsers(filtered);
+      }
+    }, 300),
+    [searchQuery, users]
+  );
+
+  const loadUsers = async (refresh = false) => {
+    if (loading || (loadingMore && !refresh)) return;
+
+    if (refresh) {
+      setLoading(true);
+      setLastDoc(null);
+      setHasMore(true);
+    }
+
     try {
-      await fetchAllUsers();
+      const result = await getAllUsers(20, refresh ? null : lastDoc);
+
+      if (refresh) {
+        setUsers(result.users);
+      } else {
+        setUsers(prev => [...prev, ...result.users]);
+      }
+
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
     } catch (error) {
+      console.error('Error loading users:', error);
       Alert.alert('Error', 'Failed to load users');
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const loadMoreUsers = async () => {
+    if (!hasMore || loadingMore || loading) return;
+
+    setLoadingMore(true);
+    await loadUsers(false);
   };
 
   const handleConnect = async (targetUser) => {
@@ -85,7 +123,21 @@ export default function Discover() {
         )}
         contentContainerStyle={styles.list}
         refreshing={loading}
-        onRefresh={loadUsers}
+        onRefresh={() => loadUsers(true)}
+        onEndReached={loadMoreUsers}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={() =>
+          loadingMore ? (
+            <View style={styles.footerLoader}>
+              <ActivityIndicator size="small" color={colors.primary} />
+              <Text style={styles.footerText}>Loading more...</Text>
+            </View>
+          ) : !hasMore && filteredUsers.length > 0 ? (
+            <View style={styles.footerLoader}>
+              <Text style={styles.footerText}>No more users to load</Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.empty}>
             <Text style={styles.emptyText}>
@@ -119,5 +171,14 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body1,
     color: colors.textSecondary,
+  },
+  footerLoader: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  footerText: {
+    ...typography.body2,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
 });

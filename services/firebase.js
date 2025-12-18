@@ -5,15 +5,23 @@ import { getStorage } from 'firebase/storage';
 import { getFunctions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Firebase configuration
+// Firebase configuration from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyANGTZ4toKIeYFePTFQhcnUTtj9vO2lcKo",
-  authDomain: "peertutorapp-eab5a.firebaseapp.com",
-  projectId: "peertutorapp-eab5a",
-  storageBucket: "peertutorapp-eab5a.firebasestorage.app",
-  messagingSenderId: "81449387073",
-  appId: "1:81449387073:web:57ad950087c19569d732c0"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID
 };
+
+// Validate Firebase configuration
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  throw new Error(
+    'Firebase configuration is missing. Please create a .env file with your Firebase credentials. ' +
+    'Copy .env.example to .env and fill in your Firebase project details.'
+  );
+}
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

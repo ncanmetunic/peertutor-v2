@@ -1,0 +1,120 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return request.auth != null &&
+             firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isValidImageUpload() {
+      return request.resource.size <= 5 * 1024 * 1024 && // 5MB limit
+             request.resource.contentType.matches('image/.*');
+    }
+
+    function isValidFileUpload() {
+      return request.resource.size <= 10 * 1024 * 1024 && // 10MB limit
+             (request.resource.contentType.matches('image/.*') ||
+              request.resource.contentType.matches('application/pdf') ||
+              request.resource.contentType.matches('application/msword') ||
+              request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*') ||
+              request.resource.contentType.matches('application/zip') ||
+              request.resource.contentType.matches('text/.*'));
+    }
+
+    function isCommunityMember(communityId) {
+      return request.auth.uid in firestore.get(/databases/(default)/documents/communities/$(communityId)).data.members;
+    }
+
+    // Profile pictures
+    match /profilePictures/{userId}/{fileName} {
+      // Anyone can read profile pictures
+      allow read: if true;
+
+      // Users can upload their own profile picture
+      allow create, update: if isSignedIn() &&
+                              isOwner(userId) &&
+                              isValidImageUpload();
+
+      // Users can delete their own profile picture, admins can delete any
+      allow delete: if isSignedIn() &&
+                      (isOwner(userId) || isAdmin());
+    }
+
+    // Community icons
+    match /communityIcons/{communityId}/{fileName} {
+      // Anyone can read community icons
+      allow read: if true;
+
+      // Community creator can upload icon
+      allow create, update: if isSignedIn() &&
+                              request.auth.uid == firestore.get(/databases/(default)/documents/communities/$(communityId)).data.createdBy &&
+                              isValidImageUpload();
+
+      // Creator and admins can delete icons
+      allow delete: if isSignedIn() &&
+                      (request.auth.uid == firestore.get(/databases/(default)/documents/communities/$(communityId)).data.createdBy ||
+                       isAdmin());
+    }
+
+    // Chat attachments
+    match /chatAttachments/{chatId}/{fileName} {
+      // Chat participants can read attachments
+      allow read: if isSignedIn() &&
+                    request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participants;
+
+      // Chat participants can upload attachments
+      allow create: if isSignedIn() &&
+                      request.auth.uid in firestore.get(/databases/(default)/documents/chats/$(chatId)).data.participants &&
+                      isValidFileUpload();
+
+      // Uploader and admins can delete
+      allow delete: if isSignedIn() &&
+                      (isOwner(resource.metadata.uploadedBy) || isAdmin());
+    }
+
+    // Community files (file library)
+    match /communityFiles/{communityId}/{fileName} {
+      // Community members can read files
+      allow read: if isSignedIn() &&
+                    isCommunityMember(communityId);
+
+      // Community members can upload files
+      allow create: if isSignedIn() &&
+                      isCommunityMember(communityId) &&
+                      isValidFileUpload();
+
+      // Uploader, community creator, and admins can delete
+      allow delete: if isSignedIn() &&
+                      (isOwner(resource.metadata.uploadedBy) ||
+                       request.auth.uid == firestore.get(/databases/(default)/documents/communities/$(communityId)).data.createdBy ||
+                       isAdmin());
+    }
+
+    // Event attachments
+    match /eventAttachments/{eventId}/{fileName} {
+      // Event participants can read attachments
+      allow read: if isSignedIn() &&
+                    request.auth.uid in firestore.get(/databases/(default)/documents/events/$(eventId)).data.participants;
+
+      // Event creator can upload attachments
+      allow create: if isSignedIn() &&
+                      request.auth.uid == firestore.get(/databases/(default)/documents/events/$(eventId)).data.createdBy &&
+                      isValidFileUpload();
+
+      // Event creator and admins can delete
+      allow delete: if isSignedIn() &&
+                      (request.auth.uid == firestore.get(/databases/(default)/documents/events/$(eventId)).data.createdBy ||
+                       isAdmin());
+    }
+  }
+}
