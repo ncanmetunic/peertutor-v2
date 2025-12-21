@@ -3,6 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../services/firebase';
 import {
   signUpWithEmail,
+  signUpWithEmailAndProfile,
   signInWithEmail,
   signOutUser,
   getUserProfile,
@@ -56,6 +57,25 @@ const useAuthStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       const user = await signUpWithEmail(email, password, displayName);
+      const profile = await getUserProfile(user.uid);
+      set({
+        user: user,
+        userProfile: profile,
+        loading: false,
+        error: null,
+      });
+      return user;
+    } catch (error) {
+      set({ loading: false, error: error.message });
+      throw error;
+    }
+  },
+
+  // Sign up with complete profile (skills and needs)
+  signUpWithProfile: async (email, password, displayName, skills, needs) => {
+    try {
+      set({ loading: true, error: null });
+      const user = await signUpWithEmailAndProfile(email, password, displayName, skills, needs);
       const profile = await getUserProfile(user.uid);
       set({
         user: user,

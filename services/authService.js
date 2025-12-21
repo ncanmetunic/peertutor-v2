@@ -52,6 +52,61 @@ export const signUpWithEmail = async (email, password, displayName) => {
 };
 
 /**
+ * Sign up a new user with email, password, and complete profile (skills and needs)
+ * Creates both Firebase Auth account and Firestore profile in one operation
+ */
+export const signUpWithEmailAndProfile = async (email, password, displayName, skills, needs) => {
+  let userCredential = null;
+
+  try {
+    // Create user in Firebase Auth
+    userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // Update display name
+    await updateProfile(user, {
+      displayName: displayName,
+    });
+
+    // Create user profile in Firestore with skills and needs
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      email: user.email,
+      displayName: displayName,
+      photoURL: null,
+      skills: skills,
+      needs: needs,
+      bio: '',
+      streak: {
+        count: 0,
+        lastActive: null,
+      },
+      blocked: [],
+      profileVisibility: DEFAULT_PROFILE_VISIBILITY,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    return user;
+  } catch (error) {
+    console.error('Sign up with profile error:', error);
+
+    // If profile creation failed but auth user was created, delete the auth user
+    // to prevent orphaned accounts
+    if (userCredential?.user) {
+      try {
+        await userCredential.user.delete();
+        console.log('Cleaned up orphaned auth user');
+      } catch (deleteError) {
+        console.error('Failed to cleanup auth user:', deleteError);
+      }
+    }
+
+    throw error;
+  }
+};
+
+/**
  * Sign in an existing user with email and password
  */
 export const signInWithEmail = async (email, password) => {
